@@ -1,0 +1,49 @@
+[package]
+name = "executor"
+version = "0.3.0"
+authors = [
+    "akorchyn <artur.yurii.korchynskyi@gmail.com>",
+    "frol <frolvlad@gmail.com>",
+    "Near Inc <hello@nearprotocol.com>",
+]
+license = "MIT OR Apache-2.0"
+edition = "2021"
+repository = "https://github.com/near/near-api-rs"
+description = "Rust library to interact with NEAR Protocol via RPC API"
+
+exclude = ["resources", "examples", "tests"]
+
+[dependencies]
+async-trait.workspace = true
+near-types.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+serde_json.workspace = true
+slipped10.workspace = true
+ed25519-dalek.workspace = true
+serde.workspace = true
+tokio.workspace = true
+futures.workspace = true
+borsh.workspace = true
+bip39.workspace = true
+url.workspace = true
+keyring = { workspace = true, optional = true }
+
+# TODO: make it optional.
+# We need it for the
+# * fast-near (poorly used here)
+# * meta transactions (most likely will not be used)
+# We can feature-gate it for ones who needs it.
+reqwest.workspace = true
+
+near-ledger = { workspace = true, optional = true }
+near-workspaces = { workspace = true, optional = true }
+near-jsonrpc-client.workspace = true
+near-jsonrpc-primitives.workspace = true
+near-primitives.workspace = true
+near-crypto.workspace = true
+
+[features]
+ledger = ["dep:near-ledger"]
+keystore = ["dep:keyring"]
+workspaces = ["dep:near-workspaces"]

@@ -1,0 +1,40 @@
+[package]
+name = "near-api"
+version = "0.3.0"
+authors = [
+    "akorchyn <artur.yurii.korchynskyi@gmail.com>",
+    "frol <frolvlad@gmail.com>",
+    "Near Inc <hello@nearprotocol.com>",
+]
+license = "MIT OR Apache-2.0"
+edition = "2021"
+repository = "https://github.com/near/near-api-rs"
+description = "Rust library to interact with NEAR Protocol via RPC API"
+
+exclude = ["resources", "examples", "tests"]
+
+[dependencies]
+borsh.workspace = true
+url.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+
+# TODO: make it optional. 
+reqwest.workspace = true
+
+near-types.workspace = true
+executor.workspace = true
+
+
+[features]
+default = ["ledger", "keystore"]
+ledger = ["executor/ledger"]
+keystore = ["executor/keystore"]
+workspaces = ["executor/workspaces"]
+
+[dev-dependencies]
+tokio = { version = "1.0", default-features = false, features = ["full"] }
+near-api = { path = ".", features = ["workspaces"] }
+futures = "0.3"

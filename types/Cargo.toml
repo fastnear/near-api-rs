@@ -1,0 +1,32 @@
+[package]
+name = "near-types"
+version = "0.3.0"
+authors = [
+    "akorchyn <artur.yurii.korchynskyi@gmail.com>",
+    "frol <frolvlad@gmail.com>",
+    "Near Inc <hello@nearprotocol.com>",
+]
+license = "MIT OR Apache-2.0"
+edition = "2021"
+repository = "https://github.com/near/near-api-rs"
+description = "Rust library to interact with NEAR Protocol via RPC API"
+
+exclude = ["resources", "examples", "tests"]
+
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+borsh.workspace = true
+derive_more.workspace = true
+serde_with.workspace = true
+bs58.workspace = true
+
+near-account-id.workspace = true
+near-gas.workspace = true
+near-token.workspace = true
+
+# TODO: remove these
+near-contract-standards = "5.6"
+near-primitives = "0.27"
+near-crypto = "0.27.0"
