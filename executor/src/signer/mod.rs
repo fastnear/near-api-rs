@@ -12,11 +12,10 @@ use near_primitives::{
     action::delegate::SignedDelegateAction,
     signable_message::{SignableMessage, SignableMessageType},
     transaction::SignedTransaction,
-    types::BlockReference,
 };
 use near_types::{
-    transactions::PrepopulateTransaction, AccountId, BlockHeight, CryptoHash, ED25519SecretKey,
-    Nonce, PublicKey, SecretKey, Transaction,
+    reference::Reference, transactions::PrepopulateTransaction, AccountId, BlockHeight, CryptoHash,
+    ED25519SecretKey, Nonce, PublicKey, SecretKey, Transaction,
 };
 use serde::Deserialize;
 use slipped10::BIP32Path;

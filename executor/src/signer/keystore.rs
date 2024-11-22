@@ -3,10 +3,11 @@ use tracing::{debug, info, instrument, trace, warn};
 use crate::{
     config::NetworkConfig,
     errors::{KeyStoreError, SignerError},
+    query::{AccessKeyListHandler, QueryBuilder, RpcBuilder, SimpleQuery},
 };
 use near_types::{
-    transactions::PrepopulateTransaction, views::AccessKeyPermission, AccountId, CryptoHash, Nonce,
-    PublicKey, SecretKey, Transaction,
+    reference::Reference, transactions::PrepopulateTransaction, views::AccessKeyPermission,
+    AccountId, CryptoHash, Nonce, PublicKey, SecretKey, Transaction,
 };
 
 use super::{AccountKeyPair, SignerTrait};
@@ -48,7 +49,7 @@ impl SignerTrait for KeystoreSigner {
             nonce,
             block_hash.into(),
         );
-        *transaction.actions_mut() = tr.actions;
+        *transaction.actions_mut() = tr.actions.into_iter().map(Into::into).collect();
 
         info!(target: KEYSTORE_SIGNER_TARGET, "Transaction and secret key prepared successfully");
         Ok((transaction, secret.private_key))
@@ -78,10 +79,15 @@ impl KeystoreSigner {
         network: &NetworkConfig,
     ) -> Result<Self, KeyStoreError> {
         info!(target: KEYSTORE_SIGNER_TARGET, "Searching for keys for account");
-        let account_keys = crate::account::Account(account_id.clone())
-            .list_keys()
-            .fetch_from(network)
-            .await?;
+        let request = near_primitives::views::QueryRequest::ViewAccessKeyList {
+            account_id: account_id.clone(),
+        };
+        let querier: QueryBuilder<AccessKeyListHandler> = RpcBuilder::new(
+            SimpleQuery { request },
+            Reference::Optimistic,
+            Default::default(),
+        );
+        let account_keys = querier.fetch_from(network).await?;
 
         debug!(target: KEYSTORE_SIGNER_TARGET, "Filtering and collecting potential public keys");
         let potential_pubkeys: Vec<PublicKey> = account_keys

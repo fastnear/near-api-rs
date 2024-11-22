@@ -3,7 +3,6 @@ use std::fmt;
 pub mod actions;
 pub mod contract;
 pub mod errors;
-pub mod macro_utils;
 pub mod reference;
 pub mod stake;
 pub mod storage;
@@ -13,15 +12,22 @@ pub mod utils;
 pub mod views;
 
 use errors::CryptoHashError;
+pub use near_abi::AbiRoot;
 pub use near_account_id::AccountId;
 pub use near_gas::NearGas;
 pub use near_token::NearToken;
 // TODO: remove this
-pub use near_crypto::{ED25519PublicKey, ED25519SecretKey, PublicKey, SecretKey};
+pub use near_crypto::{ED25519PublicKey, ED25519SecretKey, PublicKey, SecretKey, Signature};
 // TODO: remove this
 pub use near_primitives::{
     transaction::Transaction,
     views::{EpochValidatorInfo, FinalExecutionOutcomeView},
+};
+// TODO: remove this
+pub use near_contract_standards::{
+    fungible_token::metadata::FungibleTokenMetadata,
+    non_fungible_token::metadata::TokenMetadata,
+    non_fungible_token::{metadata::NFTContractMetadata, Token},
 };
 
 pub type BlockHeight = u64;

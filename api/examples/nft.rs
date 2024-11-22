@@ -1,7 +1,6 @@
 use near_api::prelude::*;
 
-use near_contract_standards::non_fungible_token::metadata::TokenMetadata;
-use near_token::NearToken;
+use near_api::types::TokenMetadata;
 use serde_json::json;
 
 #[tokio::main]

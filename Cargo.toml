@@ -1,5 +1,5 @@
 [workspace]
-members = ["types", "api", "executor"]
+members = ["types", "api", "executor", "macros"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -42,3 +42,4 @@ near-workspaces = { version = "0.15.0" }
 
 near-types = { path = "types" }
 executor = { path = "executor" }
+macros = { path = "macros" }

@@ -1,28 +1,24 @@
 use std::marker::PhantomData;
 
-use near_contract_standards::{
-    fungible_token::metadata::FungibleTokenMetadata,
-    non_fungible_token::{metadata::NFTContractMetadata, Token},
-};
-
-use near_sdk::json_types::U128;
-use near_token::NearToken;
 use near_types::{
+    actions::{Action, TransferAction},
     tokens::{FTBalance, UserBalance},
     transactions::PrepopulateTransaction,
     views::Account,
-    AccountId, Data,
+    AccountId, FungibleTokenMetadata, NFTContractMetadata, NearToken, Token,
 };
 use serde_json::json;
 
-use crate::{
-    common::{
-        query::{
-            AccountViewHandler, CallResultHandler, MultiQueryBuilder, MultiQueryHandler,
-            PostprocessHandler, QueryBuilder, SimpleQuery,
-        },
-        send::Transactionable,
+use executor::{
+    query::{
+        AccountViewHandler, CallResultHandler, MultiQueryBuilder, MultiQueryHandler,
+        PostprocessHandler, QueryBuilder, QueryRequest, SimpleQuery,
     },
+    send::Transactionable,
+    types::Data,
+};
+
+use crate::{
     contract::Contract,
     errors::{BuilderError, FTValidatorError, ValidationError},
     prelude::*,
@@ -44,7 +40,7 @@ impl Tokens {
     pub fn near_balance(
         &self,
     ) -> QueryBuilder<PostprocessHandler<UserBalance, AccountViewHandler>> {
-        let request = near_primitives::views::QueryRequest::ViewAccount {
+        let request = QueryRequest::ViewAccount {
             account_id: self.account_id.clone(),
         };
 
@@ -108,7 +104,7 @@ impl Tokens {
                 FTBalance,
                 MultiQueryHandler<(
                     CallResultHandler<FungibleTokenMetadata>,
-                    CallResultHandler<U128>,
+                    CallResultHandler<u128>,
                 )>,
             >,
         >,
@@ -116,10 +112,10 @@ impl Tokens {
         let postprocess = PostprocessHandler::new(
             MultiQueryHandler::new((
                 CallResultHandler(PhantomData::<FungibleTokenMetadata>),
-                CallResultHandler(PhantomData::<U128>),
+                CallResultHandler(PhantomData::<u128>),
             )),
             |(metadata, amount)| {
-                FTBalance::with_decimals(metadata.data.decimals).with_amount(amount.data.0)
+                FTBalance::with_decimals(metadata.data.decimals).with_amount(amount.data)
             },
         );
 
@@ -172,7 +168,7 @@ impl SendTo {
                 "ft_transfer",
                 json!({
                     "receiver_id": self.receiver_id,
-                    "amount": U128(amount.amount()),
+                    "amount": amount.amount(),
                 }),
             )?
             .transaction()
@@ -215,17 +211,19 @@ impl FTTransactionable {
         &self,
         network: &NetworkConfig,
     ) -> core::result::Result<(), ValidationError> {
-        let metadata = Tokens::ft_metadata(self.prepopulated.receiver_id.clone())?;
-
-        let metadata = metadata
-            .fetch_from(network)
-            .await
-            .map_err(|_| FTValidatorError::NoMetadata)?;
+        let metadata = Tokens::ft_metadata(self.prepopulated.receiver_id.clone())
+            .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?;
+        let metadata = metadata.fetch_from(network).await.map_err(|_| {
+            ValidationError::TransactionValidationError(FTValidatorError::NoMetadata.to_string())
+        })?;
         if metadata.data.decimals != self.decimals {
-            Err(FTValidatorError::DecimalsMismatch {
-                expected: metadata.data.decimals,
-                got: self.decimals,
-            })?;
+            Err(ValidationError::TransactionValidationError(
+                FTValidatorError::DecimalsMismatch {
+                    expected: metadata.data.decimals,
+                    got: self.decimals,
+                }
+                .to_string(),
+            ))?;
         }
         Ok(())
     }
@@ -244,12 +242,16 @@ impl Transactionable for FTTransactionable {
         self.check_decimals(network).await?;
 
         let storage_balance = StorageDeposit::on_contract(self.prepopulated.receiver_id.clone())
-            .view_account_storage(self.receiver.clone())?
+            .view_account_storage(self.receiver.clone())
+            .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?
             .fetch_from(network)
-            .await?;
+            .await
+            .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?;
 
         if storage_balance.data.is_none() {
-            Err(FTValidatorError::StorageDepositNeeded)?;
+            Err(ValidationError::TransactionValidationError(
+                FTValidatorError::StorageDepositNeeded.to_string(),
+            ))?;
         }
 
         Ok(())
@@ -262,13 +264,16 @@ impl Transactionable for FTTransactionable {
         self.check_decimals(network).await?;
 
         let storage_balance = StorageDeposit::on_contract(self.prepopulated.receiver_id.clone())
-            .view_account_storage(self.receiver.clone())?
+            .view_account_storage(self.receiver.clone())
+            .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?
             .fetch_from(network)
-            .await?;
+            .await
+            .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?;
 
         if storage_balance.data.is_none() {
             let mut action = StorageDeposit::on_contract(self.prepopulated.receiver_id.clone())
-                .deposit(self.receiver.clone(), NearToken::from_millinear(100))?
+                .deposit(self.receiver.clone(), NearToken::from_millinear(100))
+                .map_err(|err| ValidationError::TransactionValidationError(err.to_string()))?
                 .with_signer_account(self.prepopulated.signer_id.clone())
                 .tr
                 .actions;

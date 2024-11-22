@@ -1,7 +1,4 @@
-use near_account_id::AccountId;
 use near_api::prelude::*;
-
-use near_token::NearToken;
 
 #[tokio::main]
 async fn main() {

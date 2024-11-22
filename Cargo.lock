@@ -1580,6 +1580,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 
 [[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1696,17 +1704,20 @@ name = "near-api"
 version = "0.3.0"
 dependencies = [
  "async-trait",
+ "bip39",
  "borsh",
  "executor",
  "futures",
  "near-api",
  "near-types",
+ "near-workspaces",
  "reqwest",
  "serde",
  "serde_json",
  "thiserror",
  "tokio",
  "url",
+ "zstd 0.13.2",
 ]
 
 [[package]]
@@ -2044,6 +2055,8 @@ dependencies = [
  "borsh",
  "bs58 0.4.0",
  "derive_more",
+ "macros",
+ "near-abi",
  "near-account-id",
  "near-contract-standards",
  "near-crypto",

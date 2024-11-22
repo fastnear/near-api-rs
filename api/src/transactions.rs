@@ -1,12 +1,13 @@
-use near_types::{transactions::PrepopulateTransaction, AccountId};
+use near_types::{actions::Action, transactions::PrepopulateTransaction, AccountId};
 use std::sync::Arc;
 
-use crate::{
-    common::send::{ExecuteSignedTransaction, Transactionable},
+use executor::{
     config::NetworkConfig,
-    errors::{SignerError, ValidationError},
+    send::{ExecuteSignedTransaction, Transactionable},
     signer::Signer,
 };
+
+use crate::errors::ValidationError;
 
 #[derive(Clone, Debug)]
 pub struct TransactionWithSign<T: Transactionable + 'static> {
@@ -73,21 +74,22 @@ impl Transaction {
         ConstructTransaction::new(signer_id, receiver_id)
     }
 
-    pub async fn sign_transaction(
-        unsigned_tx: near_primitives::transaction::Transaction,
-        signer: Arc<Signer>,
-    ) -> Result<ExecuteSignedTransaction, SignerError> {
-        let public_key = unsigned_tx.public_key().clone();
-        let block_hash = *unsigned_tx.block_hash();
-        let nonce = unsigned_tx.nonce();
+    // TODO: implement this after the transaction is updated
+    // pub async fn sign_transaction(
+    //     unsigned_tx: near_types::Transaction,
+    //     signer: Arc<Signer>,
+    // ) -> Result<ExecuteSignedTransaction, SignerError> {
+    //     let public_key = unsigned_tx.public_key().clone();
+    //     let block_hash = *unsigned_tx.block_hash();
+    //     let nonce = unsigned_tx.nonce();
 
-        ConstructTransaction::new(
-            unsigned_tx.signer_id().clone(),
-            unsigned_tx.receiver_id().clone(),
-        )
-        .add_actions(unsigned_tx.take_actions())
-        .with_signer(signer)
-        .presign_offline(public_key, block_hash.into(), nonce)
-        .await
-    }
+    //     ConstructTransaction::new(
+    //         unsigned_tx.signer_id().clone(),
+    //         unsigned_tx.receiver_id().clone(),
+    //     )
+    //     .add_actions(unsigned_tx.take_actions())
+    //     .with_signer(signer)
+    //     .presign_offline(public_key, block_hash.into(), nonce)
+    //     .await
+    // }
 }

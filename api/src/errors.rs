@@ -1,10 +1,12 @@
-use executor::errors::*;
-use near_types::errors::*;
+pub use executor::errors::*;
+pub use near_types::errors::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum SecretBuilderkError<E: std::fmt::Debug> {
     #[error("Public key is not available")]
     PublicKeyIsNotAvailable,
+    #[error("Invalid HD path")]
+    InvalidHDPath,
     #[error(transparent)]
     SecretError(#[from] SecretError),
     #[error(transparent)]

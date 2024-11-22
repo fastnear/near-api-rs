@@ -25,6 +25,8 @@ bs58.workspace = true
 near-account-id.workspace = true
 near-gas.workspace = true
 near-token.workspace = true
+near-abi.workspace = true
+macros.workspace = true
 
 # TODO: remove these
 near-contract-standards = "5.6"

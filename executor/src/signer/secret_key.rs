@@ -33,7 +33,7 @@ impl SignerTrait for SecretKeySigner {
             nonce,
             block_hash.into(),
         );
-        *transaction.actions_mut() = tr.actions;
+        *transaction.actions_mut() = tr.actions.into_iter().map(Into::into).collect();
 
         trace!(target: SECRET_KEY_SIGNER_TARGET, "Transaction created, returning with secret key");
         Ok((transaction, self.secret_key.clone()))

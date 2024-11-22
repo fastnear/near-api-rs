@@ -1,14 +1,14 @@
 use std::convert::Infallible;
 
-use crate::common::{
-    query::{
-        AccessKeyHandler, AccessKeyListHandler, AccountViewHandler, QueryBuilder, RpcBuilder,
-        SimpleQuery,
-    },
-    secret::SecretBuilder,
-};
+use crate::secret::SecretBuilder;
 use crate::transactions::ConstructTransaction;
+use executor::query::{
+    AccessKeyHandler, AccessKeyListHandler, AccountViewHandler, QueryBuilder, QueryRequest,
+    RpcBuilder, SimpleQuery,
+};
 use near_types::{
+    actions::{Action, AddKeyAction, DeleteAccountAction, DeleteKeyAction},
+    reference::Reference,
     views::{AccessKey, AccessKeyPermission},
     AccountId, PublicKey,
 };
@@ -22,7 +22,7 @@ pub struct Account(pub AccountId);
 
 impl Account {
     pub fn view(&self) -> QueryBuilder<AccountViewHandler> {
-        let request = near_primitives::views::QueryRequest::ViewAccount {
+        let request = QueryRequest::ViewAccount {
             account_id: self.0.clone(),
         };
         QueryBuilder::new(
@@ -33,7 +33,7 @@ impl Account {
     }
 
     pub fn access_key(&self, signer_public_key: PublicKey) -> QueryBuilder<AccessKeyHandler> {
-        let request = near_primitives::views::QueryRequest::ViewAccessKey {
+        let request = QueryRequest::ViewAccessKey {
             account_id: self.0.clone(),
             public_key: signer_public_key,
         };
@@ -45,7 +45,7 @@ impl Account {
     }
 
     pub fn list_keys(&self) -> QueryBuilder<AccessKeyListHandler> {
-        let request = near_primitives::views::QueryRequest::ViewAccessKeyList {
+        let request = QueryRequest::ViewAccessKeyList {
             account_id: self.0.clone(),
         };
         RpcBuilder::new(
@@ -63,7 +63,7 @@ impl Account {
         SecretBuilder::new(move |public_key| {
             Ok(
                 ConstructTransaction::new(account_id.clone(), account_id.clone()).add_action(
-                    near_primitives::transaction::Action::AddKey(Box::new(AddKeyAction {
+                    Action::AddKey(Box::new(AddKeyAction {
                         access_key: AccessKey {
                             nonce: 0,
                             permission: permission.into(),
@@ -76,21 +76,14 @@ impl Account {
     }
 
     pub fn delete_key(&self, public_key: PublicKey) -> ConstructTransaction {
-        ConstructTransaction::new(self.0.clone(), self.0.clone()).add_action(
-            near_primitives::transaction::Action::DeleteKey(Box::new(DeleteKeyAction {
-                public_key,
-            })),
-        )
+        ConstructTransaction::new(self.0.clone(), self.0.clone())
+            .add_action(Action::DeleteKey(Box::new(DeleteKeyAction { public_key })))
     }
 
     pub fn delete_keys(&self, public_keys: Vec<PublicKey>) -> ConstructTransaction {
         let actions = public_keys
             .into_iter()
-            .map(|public_key| {
-                near_primitives::transaction::Action::DeleteKey(Box::new(DeleteKeyAction {
-                    public_key,
-                }))
-            })
+            .map(|public_key| Action::DeleteKey(Box::new(DeleteKeyAction { public_key })))
             .collect();
 
         ConstructTransaction::new(self.0.clone(), self.0.clone()).add_actions(actions)
@@ -100,11 +93,9 @@ impl Account {
         &self,
         beneficiary_id: AccountId,
     ) -> ConstructTransaction {
-        ConstructTransaction::new(self.0.clone(), self.0.clone()).add_action(
-            near_primitives::transaction::Action::DeleteAccount(
-                near_primitives::transaction::DeleteAccountAction { beneficiary_id },
-            ),
-        )
+        ConstructTransaction::new(self.0.clone(), self.0.clone()).add_action(Action::DeleteAccount(
+            DeleteAccountAction { beneficiary_id },
+        ))
     }
 
     pub const fn create_account() -> CreateAccountBuilder {

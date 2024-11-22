@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use macros::Equivalent;
 use near_contract_standards::fungible_token::Balance;
 
 use serde_with::base64::Base64;
@@ -217,6 +218,7 @@ impl From<near_primitives::views::ContractCodeView> for ContractCode {
 #[derive(
     borsh::BorshSerialize,
     borsh::BorshDeserialize,
+    Equivalent,
     Debug,
     Eq,
     PartialEq,
@@ -224,6 +226,7 @@ impl From<near_primitives::views::ContractCodeView> for ContractCode {
     serde::Serialize,
     serde::Deserialize,
 )]
+#[equivalent(near_primitives::views::AccessKeyPermissionView)]
 pub enum AccessKeyPermission {
     FunctionCall {
         #[serde(with = "dec_format")]
@@ -251,19 +254,17 @@ impl From<AccessKeyPermission> for near_primitives::account::AccessKeyPermission
     }
 }
 
-impl From<near_primitives::views::AccessKeyPermissionView> for AccessKeyPermission {
-    fn from(value: near_primitives::views::AccessKeyPermissionView) -> Self {
+impl From<near_primitives::account::AccessKeyPermission> for AccessKeyPermission {
+    fn from(value: near_primitives::account::AccessKeyPermission) -> Self {
         match value {
-            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                allowance,
-                receiver_id,
-                method_names,
-            } => Self::FunctionCall {
-                allowance,
-                receiver_id,
-                method_names,
-            },
-            near_primitives::views::AccessKeyPermissionView::FullAccess => Self::FullAccess,
+            near_primitives::account::AccessKeyPermission::FunctionCall(func_call) => {
+                Self::FunctionCall {
+                    allowance: func_call.allowance,
+                    receiver_id: func_call.receiver_id,
+                    method_names: func_call.method_names,
+                }
+            }
+            near_primitives::account::AccessKeyPermission::FullAccess => Self::FullAccess,
         }
     }
 }
@@ -291,23 +292,17 @@ impl From<near_primitives::views::ViewStateResult> for ViewStateResult {
     borsh::BorshDeserialize,
     Debug,
     Eq,
+    Equivalent,
     PartialEq,
     Clone,
     serde::Serialize,
     serde::Deserialize,
 )]
+#[equivalent(near_primitives::views::AccessKeyView)]
+#[equivalent(near_primitives::account::AccessKey)]
 pub struct AccessKey {
     pub nonce: Nonce,
     pub permission: AccessKeyPermission,
-}
-
-impl From<near_primitives::views::AccessKeyView> for AccessKey {
-    fn from(value: near_primitives::views::AccessKeyView) -> Self {
-        Self {
-            nonce: value.nonce,
-            permission: value.permission.into(),
-        }
-    }
 }
 
 /// This type is used to mark keys (arrays of bytes) that are queried from store.
@@ -334,6 +329,12 @@ pub struct StoreKey(#[serde_as(as = "Base64")] Vec<u8>);
 impl From<near_primitives::types::StoreKey> for StoreKey {
     fn from(value: near_primitives::types::StoreKey) -> Self {
         Self(value.into())
+    }
+}
+
+impl From<StoreKey> for near_primitives::types::StoreKey {
+    fn from(value: StoreKey) -> Self {
+        value.0.into()
     }
 }
 

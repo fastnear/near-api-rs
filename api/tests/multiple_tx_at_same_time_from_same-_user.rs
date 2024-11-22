@@ -1,10 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
 use futures::future::join_all;
-use near_api::{prelude::*, types::views::AccessKeyPermission};
-
-use near_crypto::PublicKey;
-use near_token::NearToken;
+use near_api::{
+    prelude::*,
+    types::{views::AccessKeyPermission, PublicKey},
+};
 
 #[tokio::test]
 async fn multiple_tx_at_same_time_from_same_key() {

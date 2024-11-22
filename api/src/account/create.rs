@@ -1,16 +1,23 @@
 use std::convert::Infallible;
 
-use near_types::{transactions::PrepopulateTransaction, AccountId, NearGas, NearToken, PublicKey};
+use near_types::{
+    actions::{Action, AddKeyAction, CreateAccountAction, TransferAction},
+    transactions::PrepopulateTransaction,
+    views::{AccessKey, AccessKeyPermission},
+    AccountId, NearGas, NearToken, PublicKey,
+};
 use reqwest::Response;
 use serde_json::json;
 use url::Url;
 
 use crate::{
-    common::{secret::SecretBuilder, send::Transactionable},
     errors::{AccountCreationError, FaucetError, ValidationError},
     prelude::*,
+    secret::SecretBuilder,
     transactions::{ConstructTransaction, TransactionWithSign},
 };
+
+pub use executor::send::Transactionable;
 
 #[derive(Clone, Debug)]
 pub struct CreateAccountBuilder;
@@ -26,24 +33,17 @@ impl CreateAccountBuilder {
             let (actions, receiver_id) = if account_id.is_sub_account_of(&signer_account_id) {
                 (
                     vec![
-                        near_primitives::transaction::Action::CreateAccount(
-                            near_primitives::transaction::CreateAccountAction {},
-                        ),
-                        near_primitives::transaction::Action::Transfer(
-                            near_primitives::transaction::TransferAction {
-                                deposit: initial_balance.as_yoctonear(),
+                        Action::CreateAccount(CreateAccountAction {}),
+                        Action::Transfer(TransferAction {
+                            deposit: initial_balance.as_yoctonear(),
+                        }),
+                        Action::AddKey(Box::new(AddKeyAction {
+                            public_key,
+                            access_key: AccessKey {
+                                nonce: 0,
+                                permission: AccessKeyPermission::FullAccess,
                             },
-                        ),
-                        near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
-                                public_key,
-                                access_key: near_primitives::account::AccessKey {
-                                    nonce: 0,
-                                    permission:
-                                        near_primitives::account::AccessKeyPermission::FullAccess,
-                                },
-                            },
-                        )),
+                        })),
                     ],
                     account_id.clone(),
                 )
@@ -154,10 +154,15 @@ impl Transactionable for CreateAccountFundMyselfTx {
         match &network.linkdrop_account_id {
             Some(linkdrop) => {
                 if &self.prepopulated.receiver_id != linkdrop {
-                    Err(AccountCreationError::AccountShouldBeSubaccountOfSignerOrLinkdrop)?;
+                    Err(ValidationError::TransactionValidationError(
+                        AccountCreationError::AccountShouldBeSubaccountOfSignerOrLinkdrop
+                            .to_string(),
+                    ))?;
                 }
             }
-            None => Err(AccountCreationError::LinkdropIsNotDefined)?,
+            None => Err(ValidationError::TransactionValidationError(
+                AccountCreationError::LinkdropIsNotDefined.to_string(),
+            ))?,
         }
 
         Ok(())

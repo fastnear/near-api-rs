@@ -1,12 +1,10 @@
 use std::path::PathBuf;
 
 use near_types::{PublicKey, SecretKey};
-use slipped10::BIP32Path;
 
-use crate::{
-    errors::{SecretBuilderkError, SecretError},
-    signer::{get_secret_key_from_seed, Signer, SignerTrait},
-};
+use crate::errors::{SecretBuilderkError, SecretError};
+
+use executor::signer::{get_secret_key_from_seed, Signer, SignerTrait};
 
 const DEFAULT_HD_PATH: &str = "m/44'/397'/0'";
 const DEFAULT_WORD_COUNT: usize = 12;
@@ -60,7 +58,7 @@ pub struct GenerateKeypairBuilder<T, E> {
 
     pub master_seed_phrase: Option<String>,
     pub word_count: Option<usize>,
-    pub hd_path: Option<BIP32Path>,
+    pub hd_path: Option<String>,
     pub passphrase: Option<String>,
 }
 
@@ -78,7 +76,7 @@ where
         self
     }
 
-    pub fn hd_path(mut self, hd_path: BIP32Path) -> Self {
+    pub fn hd_path(mut self, hd_path: String) -> Self {
         self.hd_path = Some(hd_path);
         self
     }
@@ -102,7 +100,9 @@ where
         let signer = Signer::seed_phrase_with_hd_path(
             master_seed_phrase.clone(),
             self.hd_path
-                .unwrap_or_else(|| DEFAULT_HD_PATH.parse().expect("Valid HD path")),
+                .unwrap_or_else(|| DEFAULT_HD_PATH.to_string())
+                .parse()
+                .map_err(|_| SecretBuilderkError::InvalidHDPath)?,
             self.passphrase,
         )?;
 
@@ -120,7 +120,9 @@ where
         let hd_path = self
             .hd_path
             .clone()
-            .unwrap_or_else(|| DEFAULT_HD_PATH.parse().expect("Valid HD path"));
+            .unwrap_or_else(|| DEFAULT_HD_PATH.to_string())
+            .parse()
+            .map_err(|_| SecretBuilderkError::InvalidHDPath)?;
         let passphrase = self.passphrase.clone();
         let (seed_phrase, next) = self.generate_seed_phrase()?;
 

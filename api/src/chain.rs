@@ -1,8 +1,6 @@
-use near_types::{views::Block, CryptoHash};
+use near_types::{reference::Reference, views::Block, BlockHeight, CryptoHash};
 
-use crate::common::query::{
-    BlockQueryBuilder, PostprocessHandler, RpcBlockHandler, SimpleBlockRpc,
-};
+use executor::query::{BlockQueryBuilder, PostprocessHandler, RpcBlockHandler, SimpleBlockRpc};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Chain;

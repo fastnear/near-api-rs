@@ -20,6 +20,8 @@ serde.workspace = true
 serde_json.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true
+bip39.workspace = true
+zstd.workspace = true
 
 # TODO: make it optional. 
 reqwest.workspace = true
@@ -38,3 +40,4 @@ workspaces = ["executor/workspaces"]
 tokio = { version = "1.0", default-features = false, features = ["full"] }
 near-api = { path = ".", features = ["workspaces"] }
 futures = "0.3"
+near-workspaces.workspace = true

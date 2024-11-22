@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use executor::config::NetworkConfig;
 use near_types::AccountId;
 use serde::de::DeserializeOwned;
 
@@ -52,7 +53,7 @@ where
     }
 
     pub async fn fetch_from_mainnet(self) -> Result<PostProcessed, FastNearError> {
-        match crate::config::NetworkConfig::mainnet().fastnear_url {
+        match NetworkConfig::mainnet().fastnear_url {
             Some(url) => self.fetch_from_url(url).await,
             None => Err(FastNearError::FastNearUrlIsNotDefined),
         }

@@ -1,5 +1,7 @@
-use near_api::{prelude::*, types::views::AccessKeyPermission};
-use near_crypto::SecretKey;
+use near_api::{
+    prelude::*,
+    types::{views::AccessKeyPermission, SecretKey},
+};
 
 #[tokio::main]
 async fn main() {

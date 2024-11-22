@@ -1,9 +1,9 @@
-use near_token::NearToken;
-use near_types::{storage::StorageBalance, AccountId};
+use near_types::{storage::StorageBalance, AccountId, NearToken};
 use serde_json::json;
 
+pub use executor::query::{CallResultHandler, QueryBuilder};
+
 use crate::{
-    common::query::{CallResultHandler, QueryBuilder},
     contract::{Contract, ContractTransactBuilder},
     errors::BuilderError,
     transactions::ConstructTransaction,

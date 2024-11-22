@@ -4,7 +4,6 @@
 /// This is an example of how to use account key pooling to send multiple transactions
 /// using different keys.
 use near_api::prelude::*;
-use near_token::NearToken;
 
 use std::sync::Arc;
 

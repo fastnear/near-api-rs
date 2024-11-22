@@ -1,21 +1,26 @@
 use std::{marker::PhantomData, sync::Arc};
 
-use near_gas::NearGas;
-
-use near_token::NearToken;
-use near_types::{contract::ContractSourceMetadata, AccountId, Data};
+use near_types::{
+    actions::{Action, DeployContractAction, FunctionCallAction},
+    contract::ContractSourceMetadata,
+    reference::Reference,
+    views::StoreKey,
+    AbiRoot, AccountId, NearGas, NearToken,
+};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{
-    common::{
-        query::{
-            CallResultHandler, PostprocessHandler, QueryBuilder, SimpleQuery, ViewCodeHandler,
-            ViewStateHandler,
-        },
-        send::ExecuteSignedTransaction,
+use executor::{
+    query::{
+        CallResultHandler, PostprocessHandler, QueryBuilder, QueryRequest, SimpleQuery,
+        ViewCodeHandler, ViewStateHandler,
     },
-    errors::BuilderError,
+    send::ExecuteSignedTransaction,
     signer::Signer,
+    types::Data,
+};
+
+use crate::{
+    errors::BuilderError,
     transactions::{ConstructTransaction, Transaction},
 };
 
@@ -46,12 +51,11 @@ impl Contract {
 
     pub fn abi(
         &self,
-    ) -> QueryBuilder<PostprocessHandler<Option<near_abi::AbiRoot>, CallResultHandler<Vec<u8>>>>
-    {
-        let request = near_primitives::views::QueryRequest::CallFunction {
+    ) -> QueryBuilder<PostprocessHandler<Option<AbiRoot>, CallResultHandler<Vec<u8>>>> {
+        let request = QueryRequest::CallFunction {
             account_id: self.0.clone(),
             method_name: "__contract_abi".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(vec![]),
+            args: vec![].into(),
         };
 
         QueryBuilder::new(
@@ -68,7 +72,7 @@ impl Contract {
     }
 
     pub fn wasm(&self) -> QueryBuilder<ViewCodeHandler> {
-        let request = near_primitives::views::QueryRequest::ViewCode {
+        let request = QueryRequest::ViewCode {
             account_id: self.0.clone(),
         };
 
@@ -80,9 +84,9 @@ impl Contract {
     }
 
     pub fn view_storage_with_prefix(&self, prefix: Vec<u8>) -> QueryBuilder<ViewStateHandler> {
-        let request = near_primitives::views::QueryRequest::ViewState {
+        let request = QueryRequest::ViewState {
             account_id: self.0.clone(),
-            prefix: StoreKey::from(prefix),
+            prefix: StoreKey::from(prefix).into(),
             include_proof: false,
         };
 
@@ -153,10 +157,10 @@ impl CallFunctionBuilder {
     pub fn read_only<Response: Send + Sync + DeserializeOwned>(
         self,
     ) -> QueryBuilder<CallResultHandler<Response>> {
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: self.contract,
             method_name: self.method_name,
-            args: near_primitives::types::FunctionArgs::from(self.args),
+            args: self.args.into(),
         };
 
         QueryBuilder::new(

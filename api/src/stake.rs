@@ -1,19 +1,23 @@
 use std::collections::BTreeMap;
 
-use near_gas::NearGas;
-use near_jsonrpc_client::methods::query::RpcQueryRequest;
-use near_token::NearToken;
 use near_types::{
+    reference::{EpochReference, Reference},
     stake::{RewardFeeFraction, StakingPoolInfo, UserStakeBalance},
-    AccountId, Data,
+    views::StoreKey,
+    AccountId, NearGas, NearToken,
+};
+
+use executor::{
+    config::NetworkConfig,
+    query::{
+        CallResultHandler, MultiQueryBuilder, MultiQueryHandler, PostprocessHandler, QueryBuilder,
+        QueryCreator, QueryRequest, RpcQueryRequest, RpcValidatorHandler, SimpleQuery,
+        SimpleValidatorRpc, ValidatorQueryBuilder, ViewStateHandler,
+    },
+    types::Data,
 };
 
 use crate::{
-    common::query::{
-        CallResultHandler, MultiQueryBuilder, MultiQueryHandler, PostprocessHandler, QueryBuilder,
-        QueryCreator, RpcValidatorHandler, SimpleQuery, SimpleValidatorRpc, ValidatorQueryBuilder,
-        ViewStateHandler,
-    },
     contract::Contract,
     errors::{BuilderError, QueryCreationError, QueryError},
     transactions::ConstructTransaction,
@@ -36,10 +40,10 @@ impl Delegation {
         let args = serde_json::to_vec(&serde_json::json!({
             "account_id": self.0.clone(),
         }))?;
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: pool,
             method_name: "get_account_staked_balance".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(args),
+            args: args.into(),
         };
 
         Ok(QueryBuilder::new(
@@ -59,10 +63,10 @@ impl Delegation {
         let args = serde_json::to_vec(&serde_json::json!({
             "account_id": self.0.clone(),
         }))?;
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: pool,
             method_name: "get_account_unstaked_balance".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(args),
+            args: args.into(),
         };
 
         Ok(QueryBuilder::new(
@@ -82,10 +86,10 @@ impl Delegation {
         let args = serde_json::to_vec(&serde_json::json!({
             "account_id": self.0.clone(),
         }))?;
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: pool,
             method_name: "get_account_total_balance".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(args),
+            args: args.into(),
         };
 
         Ok(QueryBuilder::new(
@@ -149,10 +153,10 @@ impl Delegation {
             "account_id": self.0.clone(),
         }))?;
 
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: pool,
             method_name: "is_account_unstaked_balance_available".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(args),
+            args: args.into(),
         };
 
         Ok(QueryBuilder::new(
@@ -329,10 +333,10 @@ impl Staking {
     pub fn staking_pool_total_stake(
         pool: AccountId,
     ) -> QueryBuilder<PostprocessHandler<NearToken, CallResultHandler<u128>>> {
-        let request = near_primitives::views::QueryRequest::CallFunction {
+        let request = QueryRequest::CallFunction {
             account_id: pool,
             method_name: "get_total_staked_balance".to_owned(),
-            args: near_primitives::types::FunctionArgs::from(vec![]),
+            args: vec![].into(),
         };
 
         QueryBuilder::new(
@@ -393,21 +397,24 @@ impl Staking {
 pub struct ActiveStakingPoolQuery;
 
 impl QueryCreator<RpcQueryRequest> for ActiveStakingPoolQuery {
-    type RpcReference = BlockReference;
+    type RpcReference = executor::query::BlockReference;
 
     fn create_query(
         &self,
-        network: &crate::config::NetworkConfig,
+        network: &NetworkConfig,
         reference: Self::RpcReference,
-    ) -> core::result::Result<RpcQueryRequest, QueryError<RpcQueryRequest>> {
-        Ok(RpcQueryRequest {
+    ) -> core::result::Result<
+        executor::query::RpcQueryRequest,
+        QueryError<executor::query::RpcQueryRequest>,
+    > {
+        Ok(executor::query::RpcQueryRequest {
             block_reference: reference,
-            request: near_primitives::views::QueryRequest::ViewState {
+            request: QueryRequest::ViewState {
                 account_id: network
                     .staking_pools_factory_account_id
                     .clone()
                     .ok_or(QueryCreationError::StakingPoolFactoryNotDefined)?,
-                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
+                prefix: StoreKey::from(b"se".to_vec()).into(),
                 include_proof: false,
             },
         })

@@ -6,30 +6,30 @@ mod storage;
 mod tokens;
 mod transactions;
 
-mod common;
 mod fastnear;
+mod secret;
 
 pub mod errors;
-pub mod types;
+pub mod types {
+    pub use executor::config::*;
+    pub use executor::types::*;
+    pub use near_types::*;
+}
 
 pub mod prelude {
     pub use crate::{
-        account::Account,
-        chain::Chain,
-        config::NetworkConfig,
-        contract::Contract,
-        fastnear::FastNear,
-        signer::{Signer, SignerTrait},
-        stake::Delegation,
-        stake::Staking,
-        storage::StorageDeposit,
-        tokens::Tokens,
-        transactions::Transaction,
+        account::Account, chain::Chain, contract::Contract, fastnear::FastNear, stake::Delegation,
+        stake::Staking, storage::StorageDeposit, tokens::Tokens, transactions::Transaction,
     };
 
-    pub use near_types::{
+    pub use crate::types::{
         reference::{EpochReference, Reference},
         tokens::{FTBalance, USDT_BALANCE, W_NEAR_BALANCE},
         AccountId, Data, NearGas, NearToken,
+    };
+
+    pub use executor::{
+        config::NetworkConfig,
+        signer::{Signer, SignerTrait},
     };
 }

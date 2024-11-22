@@ -2,15 +2,9 @@ use std::{marker::PhantomData, sync::Arc};
 
 use futures::future::join_all;
 use near_jsonrpc_client::methods::{
-    block::RpcBlockRequest,
-    query::{RpcQueryRequest, RpcQueryResponse},
-    validators::RpcValidatorRequest,
-    RpcMethod,
+    block::RpcBlockRequest, query::RpcQueryResponse, validators::RpcValidatorRequest, RpcMethod,
 };
-use near_primitives::{
-    types::{BlockReference, EpochReference},
-    views::{BlockView, QueryRequest},
-};
+use near_primitives::{types::EpochReference, views::BlockView};
 use near_types::{
     views::{AccessKey, AccessKeyList, Account, Block, ContractCode, ViewStateResult},
     EpochValidatorInfo,
@@ -19,6 +13,9 @@ use serde::de::DeserializeOwned;
 use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::{config::NetworkConfig, errors::QueryError, types::Data, utils::retry};
+
+pub use near_jsonrpc_client::methods::query::RpcQueryRequest;
+pub use near_primitives::{types::BlockReference, views::QueryRequest};
 
 const QUERY_EXECUTOR_TARGET: &str = "near_api::query::executor";
 
@@ -134,7 +131,7 @@ where
     Method::Error: std::fmt::Display + std::fmt::Debug + Sync + Send,
     Reference: Clone + Send + Sync,
 {
-    pub fn new(handler: Handler, reference: Into<Reference>) -> Self {
+    pub fn new(handler: Handler, reference: impl Into<Reference>) -> Self {
         Self {
             reference: reference.into(),
             requests: vec![],
@@ -246,7 +243,7 @@ where
 {
     pub fn new(
         request: impl QueryCreator<Method, RpcReference = Reference> + 'static + Send + Sync,
-        reference: Into<Reference>,
+        reference: impl Into<Reference>,
         handler: Handler,
     ) -> Self {
         Self {

@@ -1,3 +1,4 @@
+use near_primitives::action::delegate::SignedDelegateAction;
 use near_types::{
     transactions::PrepopulateTransaction, CryptoHash, Nonce, PublicKey, SecretKey, Transaction,
 };
@@ -39,7 +40,7 @@ impl SignerTrait for LedgerSigner {
             nonce,
             block_hash.into(),
         );
-        *unsigned_tx.actions_mut() = tr.actions;
+        *unsigned_tx.actions_mut() = tr.actions.into_iter().map(Into::into).collect();
         let unsigned_tx_bytes = borsh::to_vec(&unsigned_tx).map_err(LedgerError::from)?;
         let hd_path = self.hd_path.clone();
 
@@ -81,6 +82,7 @@ impl SignerTrait for LedgerSigner {
         let actions = tr
             .actions
             .into_iter()
+            .map(Into::<near_primitives::action::Action>::into)
             .map(near_primitives::action::delegate::NonDelegateAction::try_from)
             .collect::<Result<_, _>>()
             .map_err(|_| MetaSignError::DelegateActionIsNotSupported)?;
